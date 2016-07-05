@@ -1,0 +1,68 @@
+wfd = ToExpression@
+   Import["https://raw.githubusercontent.com/martinq321/dictionary/\
+master/values", "List"];
+
+
+wfdli = Select[
+   Reverse@Sort@Transpose@{wfd, DictionaryLookup[]} /. 
+    Missing["NotAvailable"] -> 0, #[[1]] != 0 &];
+removespaces[text_] := 
+  If[MemberQ[DictionaryLookup[], #] == True && 
+      MemberQ[DictionaryLookup[], ToLowerCase@#] == False, #, 
+     ToLowerCase[#]] & /@ 
+   StringSplit[text, Except[(LetterCharacter | "'")] ..];
+wordvalue[word_] := Select[wfdli, #[[2]] == word &][[1]];
+rejoin[stringiness_] := 
+ Module[{string, positions}, string = stringiness;
+   positions = StringPosition[string, DictionaryLookup[]];
+   StringTake[string, Pick[positions, #]] & /@ 
+    SatisfiabilityInstances[
+     And @@ (BooleanCountingFunction[{1}, Length@positions] @@@ 
+        Transpose@
+         MapIndexed[
+          Function[{list, index}, # && c @@ index & /@ list], 
+          Table[#1 <= i <= #2, {i, StringLength@string}] & @@@ 
+           positions]), Array[c, Length@positions], All]] // TableForm
+shortestrejoin[stringiness_] := 
+  Module[{a, b}, a = (rejoin@stringiness)[[1]]; b = Length /@ a; 
+   Rest@Flatten@
+     Select[Transpose@{Length /@ a, a}, #[[1]] == Min[b] &]];
+quickjoin[stringiness_] := 
+ StringCases[stringiness, 
+  Alternatives @@ SortBy[DictionaryLookup[], Minus@*StringLength]]
+suggestedstring[stringthing_] := 
+ Module[{aa, bb, cc, dd, ee}, aa = rejoin[stringthing][[1]]; 
+  bb = Length /@ aa; 
+  cc = Select[Transpose@{aa, bb}, #[[2]] == Min@bb &][[All, 1]]; 
+  dd = Quiet@Total@Flatten[(wordvalue /@ #)[[All, 1]]] & /@ cc; 
+  StringJoin@
+   Riffle[Select[Transpose@{cc, dd}, #[[2]] == Max@dd &][[1, 
+     1]], {" "}]]; 
+stringtakeupto[stringy_, n_] := 
+ With[{aa = 
+      Nearest[Last /@ 
+         StringPosition[#, 
+          Last@Most@quickjoin@StringTake[#, UpTo[n]]], n][[
+       1]]}, {StringTake[#, aa], StringDrop[#, aa]}] &@stringy[[2]];
+stringtakeupto[stringy_] := stringtakeupto[stringy, 100]
+breakstring[stringy_, n_] := 
+  With[{li = 
+       Rest@NestWhileList[stringtakeupto[#, n] &, {"", #}, 
+          StringLength@#[[2]] > n &][[All, 1]]}, 
+     Flatten@{li, StringDrop[#, Total[StringLength /@ li]]}] &@stringy;
+breakstring[stringy_] := breakstring[stringy, 100];
+quicksuggested[stringy_] := 
+  StringJoin[Riffle[quickjoin@#, " "]] &@stringy;
+charsonly[string_] := 
+  StringJoin[
+     Riffle[Select[#, LetterQ] & /@ Characters@removespaces@#, 
+      " "]] &@string;
+remapos[w_] := 
+  If[StringMatchQ[#, ___ ~~ "'s"] == True, StringDrop[#, -2], #] &@w;
+remapos1[string_] := 
+  StringJoin[Riffle[remapos@# & /@ removespaces@#, " "]] &@string;
+suggested[stringy_, n_] := 
+  ToLowerCase@
+     StringJoin[Riffle[suggestedstring /@ breakstring[#, n], " "]] &@
+   stringy;
+suggested[stringy_] := suggested[stringy, 100];
