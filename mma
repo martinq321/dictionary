@@ -1,8 +1,6 @@
-(*
 wfd = ToExpression@
    Import["https://raw.githubusercontent.com/martinq321/dictionary/\
 master/values", "List"];
-*)
 
 
 wfdli = Select[
