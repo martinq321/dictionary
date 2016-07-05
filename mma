@@ -66,3 +66,12 @@ suggested[stringy_, n_] :=
      StringJoin[Riffle[suggestedstring /@ breakstring[#, n], " "]] &@
    stringy;
 suggested[stringy_] := suggested[stringy, 100];
+
+
+(*
+suggested@
+ StringJoin@
+  removespaces@
+   TextSentences[
+     WikipediaData["PageID" -> "5094570", "ArticlePlaintext"]][[1]]
+*)
